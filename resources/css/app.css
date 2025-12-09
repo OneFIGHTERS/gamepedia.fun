@@ -1,0 +1,52 @@
+/* ------------------------------
+   Tailwind CSS Core Imports
+--------------------------------*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------
+   Alpine.js Support (x-cloak)
+--------------------------------*/
+[x-cloak] {
+    display: none !important;
+}
+
+/* ------------------------------
+   Custom Scrollbar (Optional)
+--------------------------------*/
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #64748b; /* slate-500 */
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569; /* slate-600 */
+}
+
+/* ------------------------------
+   Smooth Transitions Utility
+--------------------------------*/
+* {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow, transform;
+    transition-duration: 200ms;
+}
+
+/* ------------------------------
+   Dark Mode Smoothness
+--------------------------------*/
+html.dark {
+    color-scheme: dark;
+}
+
+/* ------------------------------
+   Custom Container
+--------------------------------*/
+.container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
