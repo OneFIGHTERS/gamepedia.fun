@@ -81,7 +81,7 @@
                     Gamepedia
                 </h1>
                 <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    Kumpulan artikel dan pengetahuan seputar game seperti Minecraft, dll.
+                    Kumpulan artikel dan pengetahuan seputar game seperti 
                 </p>
             </div>
 
