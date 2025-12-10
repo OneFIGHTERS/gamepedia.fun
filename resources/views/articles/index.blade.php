@@ -73,12 +73,10 @@
 
         {{-- KONTEN UTAMA --}}
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
             {{-- Judul & deskripsi singkat --}}
             <div class="mb-4">
                 <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
-                    {{-- Kalau ada judul kategori khusus, pakai itu --}}
-                    {{ $gameTitle ?? 'Gamepedia' }}
+                    Gamepedia
                 </h1>
                 <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     Kumpulan artikel dan pengetahuan seputar game seperti Minecraft, Valorant, dan lainnya.
@@ -109,7 +107,7 @@
                        class="px-4 py-1.5 text-xs rounded-full border transition
                               {{ $active
                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow'
-                                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700' }}">
+                                    : 'bg-slate-900/40 text-slate-200 border-slate-700 hover:bg-slate-800' }}">
                         {{ $label }}
                     </a>
                 @endforeach
@@ -124,7 +122,7 @@
 
             {{-- Tombol tambah / tulis artikel: semua user login boleh --}}
             @auth
-                <div class="mb-4">
+                <div class="mb-6">
                     <a href="{{ route('articles.create') }}"
                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 shadow-sm">
                         @if(in_array(auth()->user()->role, ['admin', 'super_admin']))
@@ -140,45 +138,22 @@
             @if ($articles->count())
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach ($articles as $article)
-                        @php
-                            $knownGames = ['minecraft', 'valorant'];
-                            $badgeLabel = $article->game ?: 'Lainnya';
-                            $badgeSlug  = null;
-
-                            if ($article->game) {
-                                $lower = strtolower($article->game);
-                                $slug  = \Illuminate\Support\Str::slug($lower, '-');
-
-                                if ($lower === 'semua game' || ! in_array($slug, $knownGames)) {
-                                    $badgeSlug = 'lainnya';
-                                } else {
-                                    $badgeSlug = $slug;
-                                }
-                            } else {
-                                $badgeSlug = 'lainnya';
-                            }
-
-                            $badgeUrl = $badgeSlug
-                                ? route('articles.byGame', $badgeSlug)
-                                : '#';
-                        @endphp
-
                         <a href="{{ route('articles.show', $article) }}"
-                           class="group bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-indigo-300 dark:hover:border-indigo-500 transition">
+                           class="group bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-indigo-300 dark:hover:border-indigo-500 transition h-full flex flex-col">
                             <div class="flex items-start justify-between gap-3 mb-3">
                                 <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-50 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                                    {{ $article->title }}
+                                    {{ $article->title ?: 'Tanpa Judul' }}
                                 </h2>
 
-                                {{-- Badge game yang bisa diklik --}}
-                                <a href="{{ $badgeUrl }}"
-                                   onclick="event.stopPropagation();"
-                                   class="px-2 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-900/70">
-                                    {{ $badgeLabel }}
-                                </a>
+                                @if($article->game)
+                                    <span
+                                        class="px-2 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
+                                        {{ $article->game }}
+                                    </span>
+                                @endif
                             </div>
 
-                            <p class="text-sm text-slate-600 dark:text-slate-300">
+                            <p class="text-sm text-slate-600 dark:text-slate-300 flex-1">
                                 {{ \Illuminate\Support\Str::limit($article->content, 130) }}
                             </p>
 
@@ -203,11 +178,7 @@
                 </div>
             @else
                 <p class="text-slate-600 dark:text-slate-300">
-                    @if(isset($gameTitle))
-                        Belum ada artikel untuk kategori <span class="font-semibold">{{ $gameTitle }}</span>.
-                    @else
-                        Belum ada artikel.
-                    @endif
+                    Belum ada artikel.
                 </p>
             @endif
         </main>
