@@ -8,20 +8,18 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, string $roles): Response
+    public function handle(Request $request, Closure $next, ...$roles)
     {
         $user = $request->user();
 
         // kalau belum login
-        if (!$user) {
-            abort(403, 'Forbidden');
+        if (! $user) {
+            abort(403);
         }
 
-        // roles bisa banyak: "admin,super_admin"
-        $allowed = array_map('trim', explode(',', $roles));
-
-        if (!in_array($user->role, $allowed, true)) {
-            abort(403, 'Forbidden');
+        // cek apakah role user ada di daftar $roles (admin / super_admin / dst)
+        if (! in_array($user->role, $roles, true)) {
+            abort(403);
         }
 
         return $next($request);
