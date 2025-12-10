@@ -62,6 +62,15 @@ Route::middleware([
     Route::put('/articles/{article}', [ArticleController::class, 'update'])
         ->name('articles.update');
 
+    // List artikel (semua)
+    Route::get('/articles', [ArticleController::class, 'index'])
+        ->name('articles.index');
+
+    // List artikel per game (minecraft, valorant, dll)
+    Route::get('/articles/game/{slug}', [ArticleController::class, 'byGame'])
+        ->name('articles.byGame');
+
+
     // =====================================================
     // ARTIKEL – HANYA ADMIN & SUPER ADMIN
     // (hapus + publish)
