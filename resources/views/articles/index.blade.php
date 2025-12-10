@@ -55,9 +55,7 @@
                         @click="toggle()"
                         type="button"
                         class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                        :aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'"
-                    >
-                        {{-- Icon matahari / bulan --}}
+                        :aria-label="dark ? 'Switch to light mode' : 'Switch to dark mode'">
                         <svg x-show="!dark" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
                              fill="none" stroke="currentColor" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -75,14 +73,46 @@
 
         {{-- KONTEN UTAMA --}}
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
             {{-- Judul & deskripsi singkat --}}
-            <div class="mb-6">
+            <div class="mb-4">
                 <h1 class="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">
-                    Gamepedia
+                    {{-- Kalau ada judul kategori khusus, pakai itu --}}
+                    {{ $gameTitle ?? 'Gamepedia' }}
                 </h1>
                 <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    Kumpulan artikel dan pengetahuan seputar game seperti Minecraft, dll.
+                    Kumpulan artikel dan pengetahuan seputar game seperti Minecraft, Valorant, dan lainnya.
                 </p>
+            </div>
+
+            {{-- MENU KATEGORI GAME --}}
+            @php
+                $gameMenu = [
+                    'all'      => 'Semua',
+                    'minecraft'=> 'Minecraft',
+                    'valorant' => 'Valorant',
+                    'lainnya'  => 'Lainnya',
+                ];
+                $currentGame = $currentGame ?? 'all';
+            @endphp
+
+            <div class="flex flex-wrap gap-3 mb-6">
+                @foreach($gameMenu as $slug => $label)
+                    @php
+                        $active = $currentGame === $slug;
+                        $url = $slug === 'all'
+                            ? route('articles.index')
+                            : route('articles.byGame', $slug);
+                    @endphp
+
+                    <a href="{{ $url }}"
+                       class="px-4 py-1.5 text-xs rounded-full border transition
+                              {{ $active
+                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow'
+                                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700' }}">
+                        {{ $label }}
+                    </a>
+                @endforeach
             </div>
 
             {{-- Notif sukses --}}
@@ -92,12 +122,11 @@
                 </div>
             @endif
 
-            {{-- Tombol tambah artikel khusus admin --}}
-           {{-- Tombol tambah / tulis artikel: semua user login boleh --}}
+            {{-- Tombol tambah / tulis artikel: semua user login boleh --}}
             @auth
                 <div class="mb-4">
                     <a href="{{ route('articles.create') }}"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 shadow-sm">
+                       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 shadow-sm">
                         @if(in_array(auth()->user()->role, ['admin', 'super_admin']))
                             + Tambah Artikel Gamepedia
                         @else
@@ -111,16 +140,42 @@
             @if ($articles->count())
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach ($articles as $article)
+                        @php
+                            $knownGames = ['minecraft', 'valorant'];
+                            $badgeLabel = $article->game ?: 'Lainnya';
+                            $badgeSlug  = null;
+
+                            if ($article->game) {
+                                $lower = strtolower($article->game);
+                                $slug  = \Illuminate\Support\Str::slug($lower, '-');
+
+                                if ($lower === 'semua game' || ! in_array($slug, $knownGames)) {
+                                    $badgeSlug = 'lainnya';
+                                } else {
+                                    $badgeSlug = $slug;
+                                }
+                            } else {
+                                $badgeSlug = 'lainnya';
+                            }
+
+                            $badgeUrl = $badgeSlug
+                                ? route('articles.byGame', $badgeSlug)
+                                : '#';
+                        @endphp
+
                         <a href="{{ route('articles.show', $article) }}"
                            class="group bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-indigo-300 dark:hover:border-indigo-500 transition">
                             <div class="flex items-start justify-between gap-3 mb-3">
                                 <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-50 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                                     {{ $article->title }}
                                 </h2>
-                                <span
-                                    class="px-2 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
-                                    {{ $article->game }}
-                                </span>
+
+                                {{-- Badge game yang bisa diklik --}}
+                                <a href="{{ $badgeUrl }}"
+                                   onclick="event.stopPropagation();"
+                                   class="px-2 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-900/70">
+                                    {{ $badgeLabel }}
+                                </a>
                             </div>
 
                             <p class="text-sm text-slate-600 dark:text-slate-300">
@@ -148,7 +203,11 @@
                 </div>
             @else
                 <p class="text-slate-600 dark:text-slate-300">
-                    Belum ada artikel.
+                    @if(isset($gameTitle))
+                        Belum ada artikel untuk kategori <span class="font-semibold">{{ $gameTitle }}</span>.
+                    @else
+                        Belum ada artikel.
+                    @endif
                 </p>
             @endif
         </main>

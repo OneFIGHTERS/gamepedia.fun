@@ -8,6 +8,26 @@
         {{-- NAVBAR --}}
         @include('layouts.navbar')
 
+        @php
+            // daftar game yang “resmi” jadi kategori
+            $knownGames = ['minecraft', 'valorant'];
+
+            $gameSlug = null;
+
+            if ($article->game) {
+                $lowerGame = strtolower($article->game);
+                // bikin slug: "Mine Craft" -> "mine-craft"
+                $slug = \Illuminate\Support\Str::slug($lowerGame, '-');
+
+                // kalau "semua game" atau bukan salah satu dari $knownGames -> kategori Lainnya
+                if ($lowerGame === 'semua game' || ! in_array($slug, $knownGames)) {
+                    $gameSlug = 'lainnya';
+                } else {
+                    $gameSlug = $slug;
+                }
+            }
+        @endphp
+
         {{-- KONTEN ARTIKEL --}}
         <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
@@ -22,34 +42,43 @@
                     {{ $article->title }}
 
                     @if ($article->game)
-                        <span class="px-2 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700
-                                    dark:bg-indigo-900/40 dark:text-indigo-200">
-                            {{ $article->game }}
-                        </span>
+                        @if($gameSlug)
+                            {{-- Badge game yang bisa diklik ke kategori game --}}
+                            <a href="{{ route('articles.byGame', $gameSlug) }}"
+                               class="px-2 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700
+                                      dark:bg-indigo-900/40 dark:text-indigo-200 hover:bg-indigo-100
+                                      dark:hover:bg-indigo-900/70 transition">
+                                {{ $article->game }}
+                            </a>
+                        @else
+                            {{-- fallback kalau nggak ke-detect --}}
+                            <span class="px-2 py-1 text-xs rounded-full bg-indigo-50 text-indigo-700
+                                         dark:bg-indigo-900/40 dark:text-indigo-200">
+                                {{ $article->game }}
+                            </span>
+                        @endif
                     @endif
                 </h1>
 
                 <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                Ditulis oleh 
-                <span class="font-medium">{{ $article->author->name ?? 'User' }}</span>
-                • {{ $article->created_at->format('d M Y') }}
+                    Ditulis oleh
+                    <span class="font-medium">{{ $article->author->name ?? 'User' }}</span>
+                    • {{ $article->created_at->format('d M Y') }}
 
-                @if ($article->status === 'published' && $article->publisher)
-                <br>
-                <span class="text-xs text-slate-500 dark:text-slate-400">
-                    Dipublish oleh
-                    <span class="font-medium">{{ $article->publisher->name }}</span>
-                    pada {{ $article->published_at?->format('d M Y H:i') }}
-                </span>
-                @else
-                <br>
-                <span class="text-xs text-amber-500">
-                    Status: BELUM DIPUBLISH (menunggu persetujuan admin)
-                </span>
-                @endif
-
+                    @if ($article->status === 'published' && $article->publisher)
+                        <br>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">
+                            Dipublish oleh
+                            <span class="font-medium">{{ $article->publisher->name }}</span>
+                            pada {{ $article->published_at?->format('d M Y H:i') }}
+                        </span>
+                    @else
+                        <br>
+                        <span class="text-xs text-amber-500">
+                            Status: BELUM DIPUBLISH (menunggu persetujuan admin)
+                        </span>
+                    @endif
                 </p>
-
             </header>
 
             {{-- TOMBOL ADMIN & SUPER ADMIN --}}
