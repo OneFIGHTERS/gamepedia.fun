@@ -46,6 +46,7 @@ class ArticleController extends Controller
         $knownGames = [
             'minecraft',
             'valorant',
+            'Genshin Impact',
             // nanti kalau mau: 'genshin-impact', 'mobile-legends', dst.
         ];
 
