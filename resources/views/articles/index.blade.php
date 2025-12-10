@@ -85,6 +85,7 @@
                     'all'      => 'Semua',
                     'minecraft'=> 'Minecraft',
                     'valorant' => 'Valorant',
+                    'genshin impact' => 'Genshin Impact',
                     'lainnya'  => 'Lainnya',
                 ];
 
