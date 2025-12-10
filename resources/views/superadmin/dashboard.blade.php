@@ -78,7 +78,7 @@
             <div class="mb-10">
                 <div class="flex items-center justify-between mb-4">
                     <h1 class="text-4xl sm:text-5xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
-                        Dashboard <span class="text-indigo-600 dark:text-indigo-400">Super Admin</span>
+                         Hi<span class="text-indigo-600 dark:text-indigo-400">Super Admin</span>
                     </h1>
                     
                     <div class="hidden lg:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-full border border-indigo-200 dark:border-indigo-800">
