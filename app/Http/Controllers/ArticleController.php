@@ -36,42 +36,41 @@ class ArticleController extends Controller
     }
 
     /**
-     * LIST ARTIKEL PER GAME (minecraft, valorant, Lainnya, dll)
+     * LIST ARTIKEL PER GAME (minecraft, valorant, genshin-impact, lainnya, dll)
      */
     public function byGame(string $slug): View
     {
         $slug = strtolower($slug);
 
-        // daftar game resmi (kategori utama)
-        $knownGames = [
+        // daftar game resmi dalam bentuk "slug" (huruf kecil + spasi jadi "-")
+        // pastikan sama dengan yang dipakai di menu:
+        //   minecraft, valorant, genshin-impact
+        $officialGameSlugs = [
             'minecraft',
             'valorant',
-            'genshin impact',
-            // nanti kalau mau: 'genshin-impact', 'mobile-legends', dst.
+            'genshin-impact',
         ];
 
         // =========================
         //  KATEGORI "LAINNYA"
         // =========================
         if ($slug === 'lainnya') {
+            // siapkan placeholder untuk NOT IN (?, ?, ?)
+            $placeholders = implode(',', array_fill(0, count($officialGameSlugs), '?'));
+
             $articles = Article::where('status', 'published')
-                ->where(function ($q) use ($knownGames) {
+                ->where(function ($q) use ($officialGameSlugs, $placeholders) {
                     $q
                         // game kosong / null
                         ->whereNull('game')
                         ->orWhere('game', '')
                         // "Semua Game" (case-insensitive)
                         ->orWhereRaw('LOWER(game) = ?', ['semua game'])
-                        // nama game tidak termasuk daftar resmi
-                        ->orWhere(function ($sub) use ($knownGames) {
-                            foreach ($knownGames as $known) {
-                                // contoh: "Minecraft" -> minecraft
-                                $sub->whereRaw(
-                                    'LOWER(REPLACE(game, " ", "-")) != ?',
-                                    [$known]
-                                );
-                            }
-                        });
+                        // nama game bukan salah satu dari daftar resmi
+                        ->orWhereRaw(
+                            'LOWER(REPLACE(game, " ", "-")) NOT IN ('.$placeholders.')',
+                            $officialGameSlugs
+                        );
                 })
                 ->latest()
                 ->paginate(12);
@@ -87,7 +86,10 @@ class ArticleController extends Controller
         //  KATEGORI GAME TERTENTU
         // =========================
         $articles = Article::where('status', 'published')
-            // cocokkan slug: "Minecraft" / "mine craft" -> minecraft
+            // contoh:
+            //   "Minecraft"        -> minecraft
+            //   "mine craft"       -> mine-craft
+            //   "Genshin Impact"   -> genshin-impact
             ->whereRaw('LOWER(REPLACE(game, " ", "-")) = ?', [$slug])
             ->latest()
             ->paginate(12);
@@ -169,7 +171,6 @@ class ArticleController extends Controller
             abort(403);
         }
 
-        // admin & super_admin boleh edit apa saja
         return view('articles.edit', [
             'article' => $article,
         ]);
@@ -217,8 +218,6 @@ class ArticleController extends Controller
      */
     public function publish(Article $article): RedirectResponse
     {
-        // hanya admin/super_admin yang sampai di sini (sudah di-filter middleware)
-
         $article->status       = 'published';
         $article->published_by = auth()->id();
         $article->published_at = now();
@@ -244,7 +243,6 @@ class ArticleController extends Controller
      */
     public function adminIndex(): View
     {
-        // semua artikel, terbaru dulu, termasuk yang pending
         $articles = Article::latest()->paginate(15);
 
         return view('admin.articles.index', [
