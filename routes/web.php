@@ -4,42 +4,39 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\SuperAdmin\UserController;
 
-// ===================
-// HALAMAN PUBLIK
-// ===================
+/*
+|--------------------------------------------------------------------------
+| HALAMAN PUBLIK
+|--------------------------------------------------------------------------
+*/
 
-// Root diarahkan ke list artikel
+// root -> daftar artikel
 Route::get('/', function () {
     return redirect()->route('articles.index');
-})->name('home');
+});
 
-// List artikel (publik)
-// Controller yg bedakan: guest vs admin/super_admin
+// daftar artikel publik (hanya yg published untuk guest/user biasa)
 Route::get('/articles', [ArticleController::class, 'index'])
     ->name('articles.index');
 
-// List artikel per game (minecraft, valorant, genshin-impact, lainnya, dll)
+// filter per game: /articles/game/minecraft, /articles/game/valorant, /articles/game/genshin-impact, /articles/game/lainnya
 Route::get('/articles/game/{slug}', [ArticleController::class, 'byGame'])
     ->name('articles.byGame');
 
-// Detail artikel (publik, tapi di controller dicek:
-//  kalau belum published, hanya author + admin + super_admin yg boleh lihat)
-Route::get('/articles/{article}', [ArticleController::class, 'show'])
-    ->name('articles.show');
 
+/*
+|--------------------------------------------------------------------------
+| AREA LOGIN (USER / ADMIN / SUPER ADMIN)
+|--------------------------------------------------------------------------
+*/
 
-// ===================
-// AREA LOGIN (USER / ADMIN / SUPER ADMIN)
-// ===================
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
 
-    // ===================
     // DASHBOARD PER ROLE
-    // ===================
     Route::get('/dashboard', function () {
         $user = auth()->user();
 
@@ -50,71 +47,88 @@ Route::middleware([
         };
     })->name('dashboard');
 
-    // =====================================================
-    // ARTIKEL – BOLEH UNTUK SEMUA ROLE YANG SUDAH LOGIN
-    // (user, admin, super_admin)
-    // =====================================================
+    /*
+    |----------------------------------------------------------------------
+    | ARTIKEL – SEMUA USER LOGIN (user, admin, super_admin)
+    |----------------------------------------------------------------------
+    */
 
-    // Form buat artikel
+    // form buat artikel
     Route::get('/articles/create', [ArticleController::class, 'create'])
         ->name('articles.create');
 
-    // Simpan artikel (status default: pending)
+    // simpan artikel
     Route::post('/articles', [ArticleController::class, 'store'])
         ->name('articles.store');
 
-    // Edit artikel:
-    //  - user: hanya artikelnya sendiri (dicek di controller)
-    //  - admin & super_admin: boleh semua (dicek di controller)
+    // form edit artikel
     Route::get('/articles/{article}/edit', [ArticleController::class, 'edit'])
         ->name('articles.edit');
 
+    // update artikel
     Route::put('/articles/{article}', [ArticleController::class, 'update'])
         ->name('articles.update');
 
 
-    // =====================================================
-    // ARTIKEL – HANYA ADMIN & SUPER ADMIN
-    // (hapus + publish)
-    // =====================================================
+    /*
+    |----------------------------------------------------------------------
+    | ARTIKEL – HANYA ADMIN & SUPER ADMIN
+    |----------------------------------------------------------------------
+    */
     Route::middleware('role:admin,super_admin')->group(function () {
 
-        // daftar artikel khusus admin (lihat pending & published)
+        // daftar artikel khusus admin (bisa lihat pending & published)
         Route::get('/admin/articles', [ArticleController::class, 'adminIndex'])
             ->name('admin.articles.index');
 
-        // Hapus artikel
+        // hapus artikel
         Route::delete('/articles/{article}', [ArticleController::class, 'destroy'])
             ->name('articles.destroy');
 
-        // Publish artikel (status: pending -> published)
+        // publish artikel
         Route::put('/articles/{article}/publish', [ArticleController::class, 'publish'])
             ->name('articles.publish');
     });
 
-    // =====================================================
-    // SUPER ADMIN SAJA – KELOLA USER & ROLE + AKTIVITAS
-    // =====================================================
+    /*
+    |----------------------------------------------------------------------
+    | SUPER ADMIN SAJA – KELOLA USER & AKTIVITAS
+    |----------------------------------------------------------------------
+    */
     Route::middleware('role:super_admin')->group(function () {
 
-        // Daftar user
+        // daftar user
         Route::get('/superadmin/users', [UserController::class, 'index'])
             ->name('superadmin.users.index');
 
-        // Ubah role user
+        // ubah role user
         Route::put('/superadmin/users/{user}/role', [UserController::class, 'updateRole'])
             ->name('superadmin.users.updateRole');
 
-        // Buka blokir user
+        // buka blokir user
         Route::put('/superadmin/users/{user}/unblock', [UserController::class, 'unblock'])
             ->name('superadmin.users.unblock');
 
-        // Hapus user
+        // hapus user
         Route::delete('/superadmin/users/{user}', [UserController::class, 'destroy'])
             ->name('superadmin.users.destroy');
 
-        // Log aktivitas artikel
+        // log aktivitas artikel
         Route::get('/superadmin/activity', [ArticleController::class, 'activity'])
             ->name('superadmin.activity');
     });
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| DETAIL ARTIKEL (PUBLIK)
+|--------------------------------------------------------------------------
+|
+| Penting: letakkan PALING BAWAH supaya tidak nabrak /articles/create,
+| /articles/{article}/edit, dll.
+|
+*/
+
+Route::get('/articles/{article}', [ArticleController::class, 'show'])
+    ->name('articles.show');
