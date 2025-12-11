@@ -11,11 +11,21 @@ use App\Http\Controllers\SuperAdmin\UserController;
 // Root diarahkan ke list artikel
 Route::get('/', function () {
     return redirect()->route('articles.index');
-});
+})->name('home');
 
-// List artikel (publik, biasanya hanya yang published di-filter di controller)
+// List artikel (publik)
+// Controller yg bedakan: guest vs admin/super_admin
 Route::get('/articles', [ArticleController::class, 'index'])
     ->name('articles.index');
+
+// List artikel per game (minecraft, valorant, genshin-impact, lainnya, dll)
+Route::get('/articles/game/{slug}', [ArticleController::class, 'byGame'])
+    ->name('articles.byGame');
+
+// Detail artikel (publik, tapi di controller dicek:
+//  kalau belum published, hanya author + admin + super_admin yg boleh lihat)
+Route::get('/articles/{article}', [ArticleController::class, 'show'])
+    ->name('articles.show');
 
 
 // ===================
@@ -62,67 +72,49 @@ Route::middleware([
     Route::put('/articles/{article}', [ArticleController::class, 'update'])
         ->name('articles.update');
 
-    // List artikel (semua)
-    Route::get('/articles', [ArticleController::class, 'index'])
-        ->name('articles.index');
-
-    // List artikel per game (minecraft, valorant, dll)
-    Route::get('/articles/game/{slug}', [ArticleController::class, 'byGame'])
-        ->name('articles.byGame');
-
 
     // =====================================================
     // ARTIKEL – HANYA ADMIN & SUPER ADMIN
     // (hapus + publish)
+    // =====================================================
     Route::middleware('role:admin,super_admin')->group(function () {
 
-    // daftar artikel khusus admin (bisa lihat pending & published)
-    Route::get('/admin/articles', [ArticleController::class, 'adminIndex'])
-        ->name('admin.articles.index');
+        // daftar artikel khusus admin (lihat pending & published)
+        Route::get('/admin/articles', [ArticleController::class, 'adminIndex'])
+            ->name('admin.articles.index');
 
-    // Hapus artikel
-    Route::delete('/articles/{article}', [ArticleController::class, 'destroy'])
-        ->name('articles.destroy');
+        // Hapus artikel
+        Route::delete('/articles/{article}', [ArticleController::class, 'destroy'])
+            ->name('articles.destroy');
 
-    // Publish artikel (status: pending -> published)
-    Route::put('/articles/{article}/publish', [ArticleController::class, 'publish'])
-        ->name('articles.publish');
-});
+        // Publish artikel (status: pending -> published)
+        Route::put('/articles/{article}/publish', [ArticleController::class, 'publish'])
+            ->name('articles.publish');
+    });
 
     // =====================================================
     // SUPER ADMIN SAJA – KELOLA USER & ROLE + AKTIVITAS
     // =====================================================
-Route::middleware('role:super_admin')->group(function () {
+    Route::middleware('role:super_admin')->group(function () {
 
-    // Daftar user
-    Route::get('/superadmin/users', [UserController::class, 'index'])
-        ->name('superadmin.users.index');
+        // Daftar user
+        Route::get('/superadmin/users', [UserController::class, 'index'])
+            ->name('superadmin.users.index');
 
-    // Ubah role user
-    Route::put('/superadmin/users/{user}/role', [UserController::class, 'updateRole'])
-        ->name('superadmin.users.updateRole');
+        // Ubah role user
+        Route::put('/superadmin/users/{user}/role', [UserController::class, 'updateRole'])
+            ->name('superadmin.users.updateRole');
 
-    // Buka blokir user
-    Route::put('/superadmin/users/{user}/unblock', [UserController::class, 'unblock'])
-        ->name('superadmin.users.unblock');
+        // Buka blokir user
+        Route::put('/superadmin/users/{user}/unblock', [UserController::class, 'unblock'])
+            ->name('superadmin.users.unblock');
 
-    // Hapus user
-    Route::delete('/superadmin/users/{user}', [UserController::class, 'destroy'])
-        ->name('superadmin.users.destroy');
+        // Hapus user
+        Route::delete('/superadmin/users/{user}', [UserController::class, 'destroy'])
+            ->name('superadmin.users.destroy');
 
-    // Log aktivitas artikel
-    Route::get('/superadmin/activity', [ArticleController::class, 'activity'])
-        ->name('superadmin.activity');
-});
-
-
+        // Log aktivitas artikel
+        Route::get('/superadmin/activity', [ArticleController::class, 'activity'])
+            ->name('superadmin.activity');
     });
-
-
-
-// ===================
-// DETAIL ARTIKEL (PUBLIK)
-// ===================
-// DITARUH PALING BAWAH SUPAYA TIDAK NUBRUK /articles/create & /articles/{article}/edit
-Route::get('/articles/{article}', [ArticleController::class, 'show'])
-    ->name('articles.show');
+});
