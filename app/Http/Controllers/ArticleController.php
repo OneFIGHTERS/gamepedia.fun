@@ -6,6 +6,7 @@ use App\Models\Article;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -30,46 +31,44 @@ class ArticleController extends Controller
 
         return view('articles.index', [
             'articles'    => $articles,
-            'currentGame' => 'all', // dipakai di menu filter game
+            'currentGame' => 'all',   // dipakai di menu filter game
             'gameTitle'   => null,
         ]);
     }
 
     /**
-     * LIST ARTIKEL PER GAME (minecraft, valorant, genshin-impact, lainnya, dll)
+     * LIST ARTIKEL PER GAME (minecraft, valorant, genshin-impact, lainnya)
      */
     public function byGame(string $slug): View
     {
         $slug = strtolower($slug);
 
-        // daftar game resmi dalam bentuk "slug" (huruf kecil + spasi jadi "-")
-        // pastikan sama dengan yang dipakai di menu:
-        //   minecraft, valorant, genshin-impact
-        $officialGameSlugs = [
+        // daftar game resmi dalam bentuk SLUG
+        // (harus sama dengan yg dipakai di index.blade.php)
+        $knownGameSlugs = [
             'minecraft',
             'valorant',
             'genshin-impact',
         ];
 
-        // =========================
-        //  KATEGORI "LAINNYA"
-        // =========================
+        /**
+         * ============================
+         *  KATEGORI "LAINNYA"
+         * ============================
+         */
         if ($slug === 'lainnya') {
-            // siapkan placeholder untuk NOT IN (?, ?, ?)
-            $placeholders = implode(',', array_fill(0, count($officialGameSlugs), '?'));
-
             $articles = Article::where('status', 'published')
-                ->where(function ($q) use ($officialGameSlugs, $placeholders) {
+                ->where(function ($q) use ($knownGameSlugs) {
                     $q
                         // game kosong / null
                         ->whereNull('game')
                         ->orWhere('game', '')
                         // "Semua Game" (case-insensitive)
                         ->orWhereRaw('LOWER(game) = ?', ['semua game'])
-                        // nama game bukan salah satu dari daftar resmi
-                        ->orWhereRaw(
-                            'LOWER(REPLACE(game, " ", "-")) NOT IN ('.$placeholders.')',
-                            $officialGameSlugs
+                        // nama game BUKAN minecraft / valorant / genshin-impact
+                        ->orWhereNotIn(
+                            DB::raw('LOWER(REPLACE(game, " ", "-"))'),
+                            $knownGameSlugs
                         );
                 })
                 ->latest()
@@ -82,14 +81,16 @@ class ArticleController extends Controller
             ]);
         }
 
-        // =========================
-        //  KATEGORI GAME TERTENTU
-        // =========================
+        /**
+         * ============================
+         *  KATEGORI GAME TERTENTU
+         * ============================
+         *
+         * Contoh:
+         *   - slug: "minecraft"      => game: "Minecraft"
+         *   - slug: "genshin-impact" => game: "Genshin Impact"
+         */
         $articles = Article::where('status', 'published')
-            // contoh:
-            //   "Minecraft"        -> minecraft
-            //   "mine craft"       -> mine-craft
-            //   "Genshin Impact"   -> genshin-impact
             ->whereRaw('LOWER(REPLACE(game, " ", "-")) = ?', [$slug])
             ->latest()
             ->paginate(12);
@@ -171,6 +172,7 @@ class ArticleController extends Controller
             abort(403);
         }
 
+        // admin & super_admin boleh edit apa saja
         return view('articles.edit', [
             'article' => $article,
         ]);
@@ -218,6 +220,7 @@ class ArticleController extends Controller
      */
     public function publish(Article $article): RedirectResponse
     {
+        // hanya admin/super_admin yang sampai di sini (sudah di-filter middleware)
         $article->status       = 'published';
         $article->published_by = auth()->id();
         $article->published_at = now();
@@ -243,6 +246,7 @@ class ArticleController extends Controller
      */
     public function adminIndex(): View
     {
+        // semua artikel, terbaru dulu, termasuk yang pending
         $articles = Article::latest()->paginate(15);
 
         return view('admin.articles.index', [
